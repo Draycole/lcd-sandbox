@@ -105,14 +105,45 @@ static inline void pixels_end(void) {
     spi_set_format(SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 }
 
+// ---- Original (unoptimized) implementation, kept only for benchmarks ----
+static void st7735_set_window_slow(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+    write_command(ST7735_CASET);
+    write_data(0x00);
+    write_data(x0);
+    write_data(0x00);
+    write_data(x1);
+
+    write_command(ST7735_RASET);
+    write_data(0x00);
+    write_data(y0);
+    write_data(0x00);
+    write_data(y1);
+
+    write_command(ST7735_RAMWR);
+}
+
+static void draw_pixel_slow(uint8_t x, uint8_t y, uint16_t color) {
+    st7735_set_window_slow(x, y, x, y);
+
+    uint8_t hi = color >> 8;
+    uint8_t lo = color & 0xFF;
+
+    cs_select();
+    dc_data();
+    spi_write_blocking(SPI_PORT, &hi, 1);
+    spi_write_blocking(SPI_PORT, &lo, 1);
+    cs_deselect();
+}
+
 void draw_rect_slow(uint8_t x0, uint8_t y0, uint8_t len, uint8_t wid, uint16_t color) {
     for (uint8_t y = y0; y < y0 + wid; y++) {
         for (uint8_t x = x0; x < x0 + len; x++) {
-            draw_pixel(x, y, color);
+            draw_pixel_slow(x, y, color);
         }
     }
 }
 
+/* used this to time 16bt tray
 void st7735_fill_screen_16(uint16_t color){
     st7735_set_window(0, 0, 127, 159);
     uint16_t line[128];                 // one row, one 16-bit value per pixel
@@ -128,6 +159,7 @@ void st7735_fill_screen_16(uint16_t color){
     spi_set_format(SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);  // back to 8-bit for commands
 }    
 
+clearing out for the second optimization
 void st7735_fill_screen(uint16_t color){
     st7735_set_window(0, 0, 127, 159);
 
@@ -146,10 +178,10 @@ void st7735_fill_screen(uint16_t color){
 
     cs_deselect();
 }
-
+*/
 void st7735_fill_screen_slow(uint16_t color) {
     // ST7735 is 128x160 pixels
-    st7735_set_window(0, 0, 127, 159);
+    st7735_set_window_slow(0, 0, 127, 159);
 
     // Each pixel is 2 bytes (16-bit RGB565)
     uint8_t hi = color >> 8;
@@ -188,7 +220,7 @@ void draw_char_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg) {
         for (int col = 0; col < 5; col++) {
             // shift right, isolate each bit from MSB to LSB
             uint16_t color = (bits >> (4 - col)) & 1 ? fg : bg;
-            draw_pixel(x + col, y + row, color);
+            draw_pixel_slow(x + col, y + row, color);
         }
     }
 }
@@ -200,7 +232,7 @@ void draw_char_scaled_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t b
         uint8_t bits = font5x7[index][row];
         for (int col = 0; col < 5; col++) {
             uint16_t color = (bits >> (4 - col)) & 1 ? fg : bg;
-            draw_rect(x + col * scale, y + row * scale, scale, scale, color);
+            draw_rect_slow(x + col * scale, y + row * scale, scale, scale, color);
         }
     }
 }
@@ -237,9 +269,9 @@ void draw_rect(uint8_t x0, uint8_t y0, uint8_t len, uint8_t wid, uint16_t color)
     pixels_end();
 }
 
-/*void st7735_fill_screen(uint16_t color) {
+void st7735_fill_screen(uint16_t color) {
     draw_rect(0, 0, 128, 160, color);        // one code path for both
-}*/
+}
 
 #define MAX_SCALE 6
 
