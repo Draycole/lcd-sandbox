@@ -42,5 +42,6 @@ void st7735_fill_screen_slow(uint16_t color);
 void draw_rect_slow(uint8_t x0, uint8_t y0, uint8_t len, uint8_t wid, uint16_t color);
 void draw_char_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg);
 void draw_char_scaled_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, uint8_t scale);
+uint32_t st7735_set_baudrate(uint32_t hz);
 
 #endif

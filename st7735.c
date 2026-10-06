@@ -72,6 +72,9 @@ static void st7735_set_window(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
     write_command(ST7735_RAMWR);
 }
 
+uint32_t st7735_set_baudrate(uint32_t hz) {
+    return spi_set_baudrate(SPI_PORT, hz);   // returns the rate actually achieved
+}
 
 /*
 // Set the pixel write window to a rectangle region
