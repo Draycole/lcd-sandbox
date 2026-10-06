@@ -1,26 +1,21 @@
 // font5x7.h
-// Each character is 7 bytes, one per row
-// Storing digits 0-9 and A-F for the  binary adder display
+// 5x7 bitmap font covering printable ASCII (32 ' ' to 126 '~').
+// The glyph data itself lives in font5x7.c.
 
-static const uint8_t font5x7[][7] = {
-    // '0'
-    {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E},
-    // '1'
-    {0x04, 0x0C, 0x04, 0x04, 0x04, 0x04, 0x0E},
-    // '2'
-    {0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F},
-    // '3'
-    {0x1F, 0x02, 0x04, 0x02, 0x01, 0x11, 0x0E},
-    // '4'
-    {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02},
-    // '5'
-    {0x1F, 0x10, 0x1E, 0x01, 0x01, 0x11, 0x0E},
-    // '6'
-    {0x06, 0x08, 0x10, 0x1E, 0x11, 0x11, 0x0E},
-    // '7'
-    {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08},
-    // '8'
-    {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E},
-    // '9'
-    {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x02, 0x0C},
-};
+#ifndef FONT5X7_H
+#define FONT5X7_H
+
+#include <stdint.h>
+
+#define FONT_FIRST_CHAR  32                                   // ' '
+#define FONT_LAST_CHAR   126                                  // '~'
+#define FONT_CHAR_COUNT  (FONT_LAST_CHAR - FONT_FIRST_CHAR + 1)  // 95 glyphs
+#define FONT_WIDTH       5                                    // glyph width in pixels
+#define FONT_HEIGHT      7                                    // glyph height in pixels
+#define FONT_ADVANCE     6                                    // glyph width + 1 pixel gap
+
+// font5x7[c - FONT_FIRST_CHAR][row]: one byte per row, top to bottom.
+// Only the low 5 bits are used: bit 4 is the leftmost pixel, bit 0 the rightmost.
+extern const uint8_t font5x7[FONT_CHAR_COUNT][FONT_HEIGHT];
+
+#endif

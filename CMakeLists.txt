@@ -8,6 +8,7 @@ pico_sdk_init()
 
 add_executable(lcd-sandbox
     st7735.c
+    font5x7.c
     main.c
 )
 

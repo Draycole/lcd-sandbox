@@ -34,6 +34,7 @@ void draw_pixel(uint8_t x, uint8_t y, uint16_t color);
 void draw_rect(uint8_t x0, uint8_t y0, uint8_t len, uint8_t wid, uint16_t color);
 void draw_char(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg);
 void draw_char_scaled(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, uint8_t scale);
+void draw_string(uint8_t x, uint8_t y, const char *str, uint16_t fg, uint16_t bg, uint8_t scale);
 
 //-- Reference (unoptimized) ---
 void st7735_fill_screen_slow(uint16_t color);

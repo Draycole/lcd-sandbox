@@ -213,7 +213,7 @@ void draw_pixel(uint8_t x, uint8_t y, uint16_t color){
 
 //character drawing from the currently number only 0-9 personal library 
 void draw_char_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg) {
-    uint8_t index = c - '0';  // works for digits 0-9
+    uint8_t index = c - FONT_FIRST_CHAR;  // ascii for glyphs listen in font5x7.c
 
     for (int row = 0; row < 7; row++) {
         uint8_t bits = font5x7[index][row];
@@ -226,7 +226,7 @@ void draw_char_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg) {
 }
 
 void draw_char_scaled_slow(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, uint8_t scale) {
-    uint8_t index = c - '0';
+    uint8_t index = c - FONT_FIRST_CHAR;
 
     for (int row = 0; row < 7; row++) {
         uint8_t bits = font5x7[index][row];
@@ -276,7 +276,7 @@ void st7735_fill_screen(uint16_t color) {
 #define MAX_SCALE 6
 
 void draw_char_scaled(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, uint8_t scale) {
-    if (c < '0' || c > '9') return;           // font only has digits for now
+    if (c < FONT_FIRST_CHAR || c > FONT_LAST_CHAR) return;           // font only has digits for now
     if (scale == 0 || scale > MAX_SCALE) return;
 
     const int w = 5 * scale;
@@ -284,7 +284,7 @@ void draw_char_scaled(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, ui
     if (x + w > 128 || y + h > 160) return;   // simple rule: don't draw if it won't fit
 
     static uint16_t buf[(5 * MAX_SCALE) * (7 * MAX_SCALE)];
-    const uint8_t *glyph = font5x7[c - '0'];
+    const uint8_t *glyph = font5x7[c - FONT_FIRST_CHAR];
 
     // Build the glyph's pixels in RAM, each font pixel becoming scale x scale pixels
     for (int row = 0; row < 7; row++) {
@@ -306,6 +306,63 @@ void draw_char_scaled(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg, ui
 
 void draw_char(uint8_t x, uint8_t y, char c, uint16_t fg, uint16_t bg) {
     draw_char_scaled(x, y, c, fg, bg, 1);
+}
+
+// Draws one line of text (no wrapping): n characters starting at s.
+// The caller guarantees the line fits within the screen width.
+static void draw_text_line(uint8_t x, uint8_t y, const char *s, int n,
+                           uint16_t fg, uint16_t bg, uint8_t scale) {
+    const int w = n * FONT_ADVANCE * scale;
+    const int h = FONT_HEIGHT * scale;
+    uint16_t row_buf[128];
+
+    st7735_set_window(x, y, x + w - 1, y + h - 1);   // one window for the whole line
+    pixels_begin();
+
+    for (int row = 0; row < FONT_HEIGHT; row++) {
+        // Build one pixel row across all the characters
+        int px = 0;
+        for (int i = 0; i < n; i++) {
+            char c = s[i];
+            if (c < FONT_FIRST_CHAR || c > FONT_LAST_CHAR) c = '?';
+            uint8_t bits = font5x7[c - FONT_FIRST_CHAR][row];
+
+            for (int col = 0; col < FONT_ADVANCE; col++) {
+                // columns 0-4 are the glyph, column 5 is the gap
+                uint16_t color = (col < FONT_WIDTH && ((bits >> (4 - col)) & 1)) ? fg : bg;
+                for (int sx = 0; sx < scale; sx++) row_buf[px++] = color;
+            }
+        }
+        // Send that row 'scale' times (this is the vertical scaling)
+        for (int sy = 0; sy < scale; sy++) {
+            spi_write16_blocking(SPI_PORT, row_buf, w);
+        }
+    }
+    pixels_end();
+}
+
+void draw_string(uint8_t x, uint8_t y, const char *str,
+                 uint16_t fg, uint16_t bg, uint8_t scale) {
+    if (scale == 0 || scale > MAX_SCALE || x >= 128) return;
+
+    const int adv = FONT_ADVANCE * scale;
+    const int max_chars = (128 - x) / adv;       // characters that fit on one line
+    if (max_chars == 0) return;
+    const int line_h = (FONT_HEIGHT + 1) * scale;  // 7 rows of glyph + 1 row of spacing
+
+    int cy = y;
+    while (*str) {
+        if (cy + FONT_HEIGHT * scale > 160) return;   // no room for another line
+
+        int n = 0;                                    // characters on this line
+        while (str[n] && str[n] != '\n' && n < max_chars) n++;
+
+        if (n > 0) draw_text_line(x, cy, str, n, fg, bg, scale);
+
+        str += n;
+        if (*str == '\n') str++;                      // skip the newline itself
+        cy += line_h;
+    }
 }
 
 // --- Initialisation sequence ---
