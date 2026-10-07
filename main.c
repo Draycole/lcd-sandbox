@@ -25,8 +25,9 @@ int main(void) {
 
     sleep_ms(1000);
     draw_rect(2, 5, 20, 20, COLOR_WHITE);
-    draw_string(100, 100, "Hello mi amor", COLOR_WHITE, COLOR_RED, 1);
+    draw_string(10, 50, "Hello mi amor", COLOR_WHITE, COLOR_RED, 1);
     draw_char_scaled(40, 100, 'W', COLOR_WHITE, COLOR_RED, 5);
+    draw_filled_circle(50, 79, 8, COLOR_GREEN);
 
     while (1) {
 
