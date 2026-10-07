@@ -1,3 +1,6 @@
 build/
 
 pico_sdk_import.cmake
+
+*.c:Zone.Identifier
+*.h:Zone.Identifier

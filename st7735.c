@@ -255,6 +255,25 @@ void draw_circle(uint8_t cx, uint8_t cy, uint8_t r, uint16_t color) {
 }
 */
 
+//fixed the circle logic below, improved efficiency
+void draw_filled_circle(uint8_t cx, uint8_t cy, uint8_t r, uint16_t color) {
+    // calculate the bounding box boundaries
+    int start_x = (cx - r < 0) ? 0 : cx - r;
+    int end_x   = (cx + r >= 128) ? 127 : cx + r;
+    int start_y = (cy - r < 0) ? 0 : cy - r;
+    int end_y   = (cy + r >= 160) ? 159 : cy + r;
+
+    for (int x = start_x; x <= end_x; x++) {
+        for (int y = start_y; y <= end_y; y++) {
+            int dx = x - cx;
+            int dy = y - cy;
+            if (dx*dx + dy*dy <= r*r) {
+                draw_pixel(x, y, color);
+            }
+        }
+    }
+}
+
 void draw_rect(uint8_t x0, uint8_t y0, uint8_t len, uint8_t wid, uint16_t color) {
     if (len == 0 || wid == 0 || x0 >= 128 || y0 >= 160) return;
     if (x0 + len > 128) len = 128 - x0;      // clip to the screen
